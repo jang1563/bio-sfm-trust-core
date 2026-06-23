@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bio-sfm-trust"
+version = "0.1.0"
+description = "Calibrated trust-routing engine for LLM orchestration over scientific foundation models (extracted from bio-sfm-trust-audit)."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "JangKeun Kim" }]
+keywords = ["calibration", "trust-routing", "foundation-models", "ai-for-science", "isotonic"]
+# Pure standard library — no runtime dependencies. Installs and tests with no GPU/weights/network.
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[project.urls]
+"Upstream (audit)" = "https://github.com/jang1563/bio-sfm-trust-audit"
+
+[tool.setuptools.packages.find]
+where = ["src"]
