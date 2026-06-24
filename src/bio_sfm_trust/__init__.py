@@ -21,6 +21,7 @@ __version__ = "0.1.0"
 from .actions import ACTIONS, normalize_action, parse_action_record
 from .adapters import AdapterContract, adapter_contracts, get_adapter_contract
 from .calibration import isotonic_calibrator, loo_calibrated_risks
+from .conformal import false_accept_rate, rcps_threshold
 from .gate import (
     calibrated_gate,
     confidence_to_risk,
@@ -37,6 +38,8 @@ __all__ = [
     "parse_action_record",
     "isotonic_calibrator",
     "loo_calibrated_risks",
+    "rcps_threshold",
+    "false_accept_rate",
     "confidence_to_risk",
     "risk_threshold_policy_net",
     "phase2_calibration_gate",
