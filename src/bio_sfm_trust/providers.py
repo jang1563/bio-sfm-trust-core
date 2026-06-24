@@ -39,12 +39,16 @@ def _anthropic_provider(model: str) -> Provider:
     client = Anthropic()
 
     def call(prompt: str) -> str:
+        # Opus 4.8 surface: adaptive thinking only; NO temperature/top_p (they 400).
+        # "Deterministic-ish" comes from low effort + a tight prompt, not a temperature knob.
         msg = client.messages.create(
             model=model,
-            max_tokens=1024,
+            max_tokens=4096,
+            thinking={"type": "adaptive"},
+            output_config={"effort": "low"},
             messages=[{"role": "user", "content": prompt}],
         )
-        return "".join(block.text for block in msg.content if getattr(block, "type", None) == "text")
+        return "".join(b.text for b in msg.content if getattr(b, "type", None) == "text")
 
     return call
 
