@@ -11,6 +11,10 @@ This is the reusable core extracted (with provenance) from
 audit and downstream designers share one calibration engine. Pure standard library —
 no GPU, weights, or network required.
 
+**Used by [bio_sfm_designer](https://github.com/jang1563/bio_sfm_designer)** — the biology DBTL
+application built on this engine. The dependency is one-way: `designer → trust-core` (this repo has no
+protein/HPC/application code).
+
 ## Install
 
 ```bash
@@ -25,6 +29,7 @@ python -m unittest discover -s tests -v
 | `actions` | the action set + `normalize_action`, `parse_action_record` |
 | `calibration` | `isotonic_calibrator`, `loo_calibrated_risks` (PAVA, leave-one-out) |
 | `gate` | `confidence_to_risk`, deterministic offline gates (`phase2_calibration_gate`, `calibrated_gate`) with shuffled/inverted controls |
+| `conformal` | `rcps_threshold`, `false_accept_rate` (RCPS / Hoeffding UCB) — the `trust` set carries a distribution-free false-accept bound |
 | `scoring` | `action_outcome`, `net_reward`, `summarize_actions` (modality-agnostic, per-item) |
 | `metrics` | pure-stdlib `auroc`, `pearson` |
 | `adapters` | `AdapterContract` schema — how any SFM plugs into the action/reward stack |
@@ -38,6 +43,13 @@ python -m unittest discover -s tests -v
   on the P(wrong) scale so `verify iff risk > λ` actually fires.
 - An offline deterministic gate must beat trust-all + shuffled/inverted controls
   **before any LLM spend**.
+
+## Status
+
+Stable engine — 32 tests, pure stdlib. Latest addition: RCPS conformal risk control (`conformal`),
+so the `trust` route can be certified to a target false-accept rate where the data allows. Consumed by
+[bio_sfm_designer](https://github.com/jang1563/bio_sfm_designer); see that repo's README for the
+application-level status and honest findings.
 
 ## License
 
