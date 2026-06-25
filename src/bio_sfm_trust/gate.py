@@ -43,11 +43,17 @@ DEFAULT_CORRECT_LDDT = 0.9
 def confidence_to_risk(record: dict[str, Any]) -> float:
     """Map model-emitted confidence to an estimated wrong-risk in [0, 1].
 
-    Monomer: risk = 1 - pLDDT/100. Complex: blend pLDDT with ipTM (interface
-    confidence), since complex calibration leans on the interface.
+    Monomer: risk = 1 - pLDDT/100. Complex: prefer interface predicted-aligned-error
+    (pae_interaction, A, lower=better) when present -- it is the validated interface signal
+    (downstream M6c-lite: pAE discriminates interface success even among well-folded binders,
+    where ipTM is chance); risk = pae/30 clamped. Falls back to the pLDDT+ipTM blend, then pLDDT.
+    The downstream gate re-calibrates this raw risk per regime (isotonic), so only its MONOTONICITY
+    with failure matters here.
     """
     plddt = float(record.get("mean_plddt", 0.0)) / 100.0
-    if record.get("regime") == "complex" and record.get("iptm") is not None:
+    if record.get("regime") == "complex" and record.get("pae_interaction") is not None:
+        risk = float(record["pae_interaction"]) / 30.0
+    elif record.get("regime") == "complex" and record.get("iptm") is not None:
         risk = 1.0 - 0.5 * plddt - 0.5 * float(record["iptm"])
     else:
         risk = 1.0 - plddt
