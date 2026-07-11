@@ -16,12 +16,21 @@ Pure standard library; no GPU/weights/network required.
 
 from __future__ import annotations
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 from .actions import ACTIONS, normalize_action, parse_action_record
 from .adapters import AdapterContract, adapter_contracts, get_adapter_contract
 from .calibration import isotonic_calibrator, loo_calibrated_risks
-from .conformal import false_accept_rate, rcps_threshold
+from .conformal import (
+    clopper_pearson_upper_bound,
+    false_accept_rate,
+    hoeffding_upper_bound,
+    rcps_threshold,
+    select_candidate_threshold,
+    select_empirical_threshold,
+    split_ltt_threshold,
+    validate_fixed_threshold,
+)
 from .gate import (
     calibrated_gate,
     confidence_to_risk,
@@ -39,6 +48,12 @@ __all__ = [
     "isotonic_calibrator",
     "loo_calibrated_risks",
     "rcps_threshold",
+    "select_candidate_threshold",
+    "select_empirical_threshold",
+    "split_ltt_threshold",
+    "validate_fixed_threshold",
+    "clopper_pearson_upper_bound",
+    "hoeffding_upper_bound",
     "false_accept_rate",
     "confidence_to_risk",
     "risk_threshold_policy_net",

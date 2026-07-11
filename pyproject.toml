@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "bio-sfm-trust"
-version = "0.1.0"
+version = "0.2.0"
 description = "Calibrated trust-routing engine for LLM orchestration over scientific foundation models (extracted from bio-sfm-trust-audit)."
 readme = "README.md"
 requires-python = ">=3.9"

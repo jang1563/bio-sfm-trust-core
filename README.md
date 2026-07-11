@@ -29,7 +29,7 @@ python -m unittest discover -s tests -v
 | `actions` | the action set + `normalize_action`, `parse_action_record` |
 | `calibration` | `isotonic_calibrator`, `loo_calibrated_risks` (PAVA, leave-one-out) |
 | `gate` | `confidence_to_risk`, deterministic offline gates (`phase2_calibration_gate`, `calibrated_gate`) with shuffled/inverted controls |
-| `conformal` | `rcps_threshold`, `false_accept_rate` (RCPS / Hoeffding UCB) — the `trust` set carries a distribution-free false-accept bound |
+| `conformal` | split learn-then-test thresholding: fit-split selection plus independent fixed-threshold Hoeffding certification |
 | `scoring` | `action_outcome`, `net_reward`, `summarize_actions` (modality-agnostic, per-item) |
 | `metrics` | pure-stdlib `auroc`, `pearson` |
 | `adapters` | `AdapterContract` schema — how any SFM plugs into the action/reward stack |
@@ -46,8 +46,10 @@ python -m unittest discover -s tests -v
 
 ## Status
 
-Stable engine — 32 tests, pure stdlib. Latest addition: RCPS conformal risk control (`conformal`),
-so the `trust` route can be certified to a target false-accept rate where the data allows. Consumed by
+Stable engine — 36 tests, pure stdlib. The certified path uses `split_ltt_threshold`: threshold selection
+and isotonic fitting happen on a fit split, then a frozen rule is checked on an independent certification
+split. `rcps_threshold` remains only as a backward-compatible exploratory selector; its same-data grid
+search is not a formal certificate. Consumed by
 [bio_sfm_designer](https://github.com/jang1563/bio_sfm_designer); see that repo's README for the
 application-level status and honest findings.
 
