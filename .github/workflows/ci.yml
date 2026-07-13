@@ -1,0 +1,83 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  static-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - name: Install static-check tools
+        run: python -m pip install "cffconvert>=2,<3" "ruff==0.15.21"
+      - name: Lint source and tests
+        run: ruff check src tests
+      - name: Validate citation metadata
+        run: cffconvert --validate
+      - name: Compile source and tests
+        run: python -m compileall -q src tests
+
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install package
+        run: python -m pip install .
+      - name: Run tests against installed package
+        run: python -m unittest discover -s tests -v
+
+  provider-compatibility:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - name: Install optional Anthropic provider
+        run: python -m pip install ".[anthropic]"
+      - name: Construct provider without a network call
+        env:
+          ANTHROPIC_API_KEY: test-key-for-construction-only
+        run: python -c "from bio_sfm_trust import get_provider; assert callable(get_provider('anthropic'))"
+
+  build:
+    needs: [provider-compatibility, static-checks, test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - name: Install build tools
+        run: python -m pip install "build>=1.2,<2" "twine>=5,<7"
+      - name: Build and check distributions
+        run: |
+          python -m build
+          python -m twine check dist/*
+      - name: Smoke-test wheel
+        run: |
+          python -m pip install --force-reinstall dist/*.whl
+          python -c "import bio_sfm_trust; print(bio_sfm_trust.__version__)"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: bio-sfm-trust-dist
+          path: dist/*
+          if-no-files-found: error

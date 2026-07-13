@@ -29,6 +29,16 @@ _ALIASES = {
     "untested": "defer",
 }
 
+_ACTION_TOKEN_PATTERN = re.compile(
+    r"(?<!\w)(?:"
+    + "|".join(
+        re.escape(action)
+        for action in sorted(set(ACTIONS) | set(_ALIASES), key=lambda action: (-len(action), action))
+    )
+    + r")(?!\w)",
+    re.I,
+)
+
 
 def normalize_action(value: str) -> str:
     key = value.strip().lower().replace("-", "_").replace(" ", "_")
@@ -47,14 +57,18 @@ def parse_action_record(value: str | dict[str, Any]) -> dict[str, Any]:
         try:
             rec = json.loads(text)
         except json.JSONDecodeError:
-            match = re.search(
-                r"(trust_sfm|verify_assay|default_baseline|defer|trust|verify|baseline|additive|abstain)",
-                text,
-                re.I,
-            )
-            if not match:
+            matches = {
+                normalize_action(match.group(0)) for match in _ACTION_TOKEN_PATTERN.finditer(text)
+            }
+            if not matches:
                 raise ValueError(f"could not parse action from {value!r}") from None
-            rec = {"action": match.group(1)}
+            if len(matches) > 1:
+                raise ValueError(
+                    f"ambiguous actions in {value!r}: {sorted(matches)}"
+                ) from None
+            rec = {"action": matches.pop()}
+        if not isinstance(rec, dict):
+            raise ValueError("action record JSON must be an object")
     rec["action"] = normalize_action(str(rec.get("action", "")))
     if "confidence" in rec:
         rec["confidence"] = float(rec["confidence"])

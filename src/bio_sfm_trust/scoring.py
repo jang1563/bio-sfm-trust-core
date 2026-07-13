@@ -70,13 +70,17 @@ def summarize_actions(rows: list[dict[str, Any]], lam: float = 0.5) -> dict[str,
     trust_err = sum(
         1 for r, a in zip(rows, acts) if a == "trust_sfm" and not bool(r.get("sfm_correct", False))
     )
+    trust_count = acts.count("trust_sfm")
     return {
         "n": n,
         "accuracy": round(correct / n, 6),
         "assays_per_item": round(assays / n, 6),
         "net_reward_per_item": round((correct - lam * assays) / n, 6),
         "trust_error_rate": round(trust_err / n, 6),
-        "trust_rate": round(acts.count("trust_sfm") / n, 6),
+        "trust_error_rate_given_trust": (
+            round(trust_err / trust_count, 6) if trust_count else None
+        ),
+        "trust_rate": round(trust_count / n, 6),
         "verify_rate": round(acts.count("verify_assay") / n, 6),
         "default_rate": round(acts.count("default_baseline") / n, 6),
         "defer_rate": round(acts.count("defer") / n, 6),

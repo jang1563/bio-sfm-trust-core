@@ -3,8 +3,8 @@
 Provenance: distilled from bio-sfm-trust-audit
 (experiments/trust_cue_attribution/llm_runner.py) provider dispatch. A provider is
 a callable `(prompt: str) -> str` returning the model's raw text. The `mock`
-providers let the whole loop run with no API key/network (M0). The `anthropic`
-provider is lazy: it only imports the SDK when actually requested (M2).
+providers let the whole loop run with no API key or network. The `anthropic`
+provider is lazy: it only imports the SDK when actually requested.
 """
 
 from __future__ import annotations
@@ -25,13 +25,13 @@ def _mock_trust_response(prompt: str) -> str:
 
 
 def _anthropic_provider(model: str) -> Provider:
-    """Lazily construct an Anthropic-backed provider (M2). Imports SDK on demand."""
+    """Lazily construct an Anthropic-backed provider; import the SDK on demand."""
     try:
         import anthropic  # noqa: F401
     except ImportError as exc:  # pragma: no cover - exercised only when SDK absent
         raise RuntimeError(
             "anthropic provider requested but the 'anthropic' SDK is not installed. "
-            "Install it and set ANTHROPIC_API_KEY (designer milestone M2)."
+            "Install the 'anthropic' extra and set ANTHROPIC_API_KEY."
         ) from exc
 
     from anthropic import Anthropic
@@ -39,8 +39,8 @@ def _anthropic_provider(model: str) -> Provider:
     client = Anthropic()
 
     def call(prompt: str) -> str:
-        # Opus 4.8 surface: adaptive thinking only; NO temperature/top_p (they 400).
-        # "Deterministic-ish" comes from low effort + a tight prompt, not a temperature knob.
+        # Adaptive thinking cannot be combined with temperature or top_p. Low effort
+        # and a constrained prompt reduce variance without claiming determinism.
         msg = client.messages.create(
             model=model,
             max_tokens=4096,

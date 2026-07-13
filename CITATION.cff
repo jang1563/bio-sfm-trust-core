@@ -1,0 +1,21 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it using the metadata below."
+type: software
+title: "bio-sfm-trust-core: Calibrated trust routing for science foundation models"
+version: 0.2.0
+date-released: 2026-07-13
+authors:
+  - family-names: Kim
+    given-names: JangKeun
+repository-code: "https://github.com/jang1563/bio-sfm-trust-core"
+url: "https://github.com/jang1563/bio-sfm-trust-core"
+license: MIT
+abstract: >-
+  A dependency-free Python engine for calibrated, cost-aware trust routing and
+  split learn-then-test certification over specialist science foundation model outputs.
+keywords:
+  - trust routing
+  - calibration
+  - selective prediction
+  - science foundation models
+  - AI for science

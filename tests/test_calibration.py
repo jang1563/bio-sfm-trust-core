@@ -30,13 +30,14 @@ class IsotonicTests(unittest.TestCase):
         self.assertEqual(len(cal), len(raw))
         self.assertTrue(all(0.0 <= c <= 1.0 for c in cal))
 
-    def test_isotonic_preserves_auroc(self):
-        # Isotonic is monotone, so it cannot change a ranking metric.
+    def test_loo_calibrated_auroc_remains_well_defined(self):
+        # Leave-one-out predictions come from different fitted maps, so equality
+        # with raw AUROC is not assumed; the result must still be a valid AUROC.
         raw = [0.1, 0.25, 0.3, 0.55, 0.8, 0.95]
         wrong = [0, 0, 1, 0, 1, 1]
         cal = loo_calibrated_risks(raw, wrong)
         self.assertIsNotNone(auroc(raw, wrong))
-        # calibrated ranking AUROC should be defined and within [0,1]
+        # Calibrated ranking AUROC should be defined and within [0, 1].
         a_cal = auroc(cal, wrong)
         self.assertIsNotNone(a_cal)
         self.assertTrue(0.0 <= a_cal <= 1.0)

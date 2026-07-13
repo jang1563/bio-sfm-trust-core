@@ -86,6 +86,52 @@ class ConformalTests(unittest.TestCase):
             places=12,
         )
 
+    def test_clopper_pearson_large_sample_does_not_underflow(self):
+        # Reference: scipy.stats.beta.ppf(0.9, 5001, 5000). Endpoint-seeded
+        # binomial recurrences underflow here and previously returned 0.0718.
+        self.assertAlmostEqual(
+            clopper_pearson_upper_bound(5000, 10000, 0.1),
+            0.5064573273912201,
+            places=12,
+        )
+
+    def test_clopper_pearson_never_false_certifies_large_empirical_error(self):
+        report = validate_fixed_threshold(
+            [0.1] * 10000,
+            [1] * 5000 + [0] * 5000,
+            tau=0.1,
+            alpha=0.2,
+            delta=0.1,
+            bound="clopper_pearson",
+        )
+        self.assertEqual(report["empirical_false_accept_rate"], 0.5)
+        self.assertGreaterEqual(report["ucb"], 0.5)
+        self.assertFalse(report["certified"])
+
+    def test_clopper_pearson_avoids_complement_cancellation_near_delta_one(self):
+        # Reference: scipy.stats.beta.ppf(1 - delta, 5001, 5000). Comparing
+        # CDFs rounded near one previously underestimated this quantile by 4e-4.
+        delta = float.fromhex("0x1.fffffffffffffp-1")
+        self.assertAlmostEqual(
+            clopper_pearson_upper_bound(5000, 10000, delta),
+            0.45907217989441357,
+            places=12,
+        )
+
+    def test_bound_apis_reject_ambiguous_or_nonfinite_numeric_inputs(self):
+        for invalid_n in (True, 3.0, 0, -1):
+            with self.subTest(invalid_n=invalid_n):
+                with self.assertRaisesRegex(ValueError, "positive integer"):
+                    clopper_pearson_upper_bound(0, invalid_n)
+        for invalid_count in (True, 1.5, float("inf")):
+            with self.subTest(invalid_count=invalid_count):
+                with self.assertRaisesRegex(ValueError, "integer"):
+                    clopper_pearson_upper_bound(invalid_count, 10)
+        for invalid_delta in ("0.1", float("nan"), float("inf")):
+            with self.subTest(invalid_delta=invalid_delta):
+                with self.assertRaisesRegex(ValueError, "delta"):
+                    clopper_pearson_upper_bound(0, 10, invalid_delta)
+
     def test_fixed_threshold_supports_predeclared_exact_bound(self):
         report = validate_fixed_threshold(
             [0.1] * 22 + [0.9] * 8,
@@ -147,6 +193,79 @@ class ConformalTests(unittest.TestCase):
     def test_length_mismatch_fails_closed(self):
         with self.assertRaisesRegex(ValueError, "equal length"):
             validate_fixed_threshold([0.1], [], tau=0.1, alpha=0.2)
+
+    def test_fractional_wrong_labels_cannot_be_truncated_into_a_certificate(self):
+        with self.assertRaisesRegex(ValueError, "binary"):
+            validate_fixed_threshold(
+                [0.1] * 40,
+                [0.9] * 40,
+                tau=0.1,
+                alpha=0.2,
+            )
+        with self.assertRaisesRegex(ValueError, "binary"):
+            false_accept_rate([0.1], [0.9], tau=0.1)
+
+    def test_risks_and_threshold_must_be_finite_probabilities(self):
+        for invalid_risk in (float("nan"), float("inf"), -0.1, 1.1, "0.1"):
+            with self.subTest(invalid_risk=invalid_risk):
+                with self.assertRaisesRegex(ValueError, "finite|between"):
+                    validate_fixed_threshold(
+                        [invalid_risk],
+                        [0],
+                        tau=0.1,
+                        alpha=0.2,
+                    )
+        for invalid_tau in (float("nan"), float("inf"), -0.1, 1.1, "0.1"):
+            with self.subTest(invalid_tau=invalid_tau):
+                with self.assertRaisesRegex(ValueError, "tau"):
+                    validate_fixed_threshold(
+                        [0.1],
+                        [0],
+                        tau=invalid_tau,
+                        alpha=0.2,
+                    )
+
+    def test_fixed_threshold_validates_bound_before_empty_accept_return(self):
+        with self.assertRaisesRegex(ValueError, "bound"):
+            validate_fixed_threshold(
+                [0.9],
+                [0],
+                tau=0.1,
+                alpha=0.2,
+                bound="unsupported",
+            )
+
+    def test_empty_accept_report_preserves_bound_field(self):
+        report = validate_fixed_threshold(
+            [0.9],
+            [0],
+            tau=0.1,
+            alpha=0.2,
+            bound="clopper_pearson",
+        )
+        self.assertFalse(report["certified"])
+        self.assertEqual(report["bound"], "clopper_pearson")
+
+    def test_split_ltt_validates_certification_split_before_no_candidate_return(self):
+        with self.assertRaisesRegex(ValueError, "equal length"):
+            split_ltt_threshold(
+                [],
+                [],
+                [0.1],
+                [],
+                alpha=0.2,
+            )
+
+    def test_split_ltt_validates_delta_before_no_candidate_return(self):
+        with self.assertRaisesRegex(ValueError, "delta"):
+            split_ltt_threshold(
+                [],
+                [],
+                [],
+                [],
+                alpha=0.2,
+                delta=-1.0,
+            )
 
 
 if __name__ == "__main__":

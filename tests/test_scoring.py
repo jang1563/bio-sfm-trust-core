@@ -46,6 +46,20 @@ class SummarizeTests(unittest.TestCase):
         rows = [{"action": "trust_sfm", "sfm_correct": False, "baseline_correct": False}]
         s = summarize_actions(rows, lam=0.5)
         self.assertEqual(s["trust_error_rate"], 1.0)
+        self.assertEqual(s["trust_error_rate_given_trust"], 1.0)
+
+    def test_trust_error_rate_preserves_per_item_denominator(self):
+        rows = [
+            {"action": "trust_sfm", "sfm_correct": False, "baseline_correct": False},
+            {"action": "verify_assay", "sfm_correct": False, "baseline_correct": False},
+        ]
+        s = summarize_actions(rows, lam=0.5)
+        self.assertEqual(s["trust_error_rate"], 0.5)
+        self.assertEqual(s["trust_error_rate_given_trust"], 1.0)
+
+    def test_conditional_trust_error_is_none_without_trust_actions(self):
+        rows = [{"action": "defer", "sfm_correct": False, "baseline_correct": False}]
+        self.assertIsNone(summarize_actions(rows)["trust_error_rate_given_trust"])
 
 
 if __name__ == "__main__":

@@ -26,6 +26,22 @@ class ActionTests(unittest.TestCase):
         rec = parse_action_record("I would verify_assay this one.")
         self.assertEqual(rec["action"], "verify_assay")
 
+    def test_freeform_action_uses_token_boundaries(self):
+        with self.assertRaises(ValueError):
+            parse_action_record("I distrust this output.")
+
+    def test_freeform_rejects_ambiguous_actions(self):
+        with self.assertRaises(ValueError):
+            parse_action_record("Either trust_sfm or verify_assay.")
+
+    def test_freeform_allows_repeated_aliases_for_same_action(self):
+        rec = parse_action_record("I would trust, meaning trust_sfm.")
+        self.assertEqual(rec["action"], "trust_sfm")
+
+    def test_json_action_record_must_be_an_object(self):
+        with self.assertRaises(ValueError):
+            parse_action_record('["trust_sfm"]')
+
     def test_parse_from_dict(self):
         rec = parse_action_record({"action": "defer"})
         self.assertEqual(rec["action"], "defer")
